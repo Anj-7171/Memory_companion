@@ -1,0 +1,1183 @@
+Yes. The best way to build **ROOTS — Memory OS** as a beginner is **not** to build the entire AI platform at once.
+
+Your prompt describes a large product with UI, media ingestion, AI/NLP, mood analytics, multiplayer rooms, and a backend. We should build it in layers.
+
+Since you already have experience with Python and are working on AI projects, I recommend:
+
+> **Phase 1: Build the complete mobile UI → Phase 2: Connect real data → Phase 3: Add AI features → Phase 4: Add multiplayer/social features.**
+
+---
+
+# 0. What you are actually building
+
+Your app can eventually look like this:
+
+```text
+ROOTS — Memory OS
+│
+├── 📱 Mobile App
+│   ├── Home / Memory Feed
+│   ├── Memory Capsules
+│   ├── Games
+│   ├── Mood Dashboard
+│   └── Profile
+│
+├── 🧠 AI Engine
+│   ├── Sentiment Analysis
+│   ├── Emotion Classification
+│   ├── Memory Summarization
+│   ├── Recommendations
+│   └── Mood Analytics
+│
+├── 📂 Data Layer
+│   ├── Memories
+│   ├── Images
+│   ├── Videos
+│   ├── Audio
+│   ├── Notes
+│   └── Mood History
+│
+└── 🌐 Backend
+    ├── Authentication
+    ├── Database
+    ├── Media Storage
+    └── Real-time Game Rooms
+```
+
+Don't build all of this now.
+
+---
+
+# PHASE 1 — BUILD THE UI FIRST
+
+## Step 1: Choose your technology stack
+
+For your project, I recommend:
+
+### Mobile App
+
+```text
+React Native
++
+Expo
++
+NativeWind
++
+TypeScript
+```
+
+### Why?
+
+| Technology   | Purpose                   |
+| ------------ | ------------------------- |
+| React Native | Build Android/iOS app     |
+| Expo         | Makes React Native easier |
+| TypeScript   | Safer JavaScript          |
+| NativeWind   | Tailwind CSS-style UI     |
+| Expo Router  | Navigation                |
+| Zustand      | Simple state management   |
+
+Your stack:
+
+```text
+ROOTS Mobile App
+
+React Native
+Expo
+TypeScript
+NativeWind
+Expo Router
+Zustand
+React Native Reanimated
+React Native SVG
+```
+
+For now, **do not worry about backend or AI**.
+
+---
+
+# Step 2: Install the required tools
+
+Install:
+
+### 1. Node.js
+
+Use the current LTS version.
+
+### 2. VS Code
+
+Recommended extensions:
+
+```text
+ES7+ React/Redux Snippets
+Tailwind CSS IntelliSense
+Prettier
+Expo Tools
+```
+
+### 3. Expo Go
+
+Install the Expo Go app on your Android phone.
+
+This lets you run the app directly on your phone.
+
+---
+
+# Step 3: Create the project
+
+Open your terminal:
+
+```bash
+npx create-expo-app@latest roots-memory-os
+```
+
+Choose the TypeScript template if prompted.
+
+Then:
+
+```bash
+cd roots-memory-os
+```
+
+Run:
+
+```bash
+npx expo start
+```
+
+You should see a QR code.
+
+Scan it with Expo Go.
+
+At this point, your first goal is simply:
+
+```text
+Terminal
+   ↓
+Expo
+   ↓
+Phone
+   ↓
+ROOTS App
+```
+
+Do not start designing the complex dashboard yet.
+
+First make sure:
+
+```text
+App opens successfully
+```
+
+---
+
+# Step 4: Clean the starter project
+
+Your project should eventually look something like:
+
+```text
+roots-memory-os/
+│
+├── app/
+│   ├── _layout.tsx
+│   │
+│   ├── index.tsx
+│   │
+│   ├── memories.tsx
+│   ├── games.tsx
+│   ├── mood.tsx
+│   └── profile.tsx
+│
+├── components/
+│   ├── RootLogo.tsx
+│   ├── TopNavigation.tsx
+│   ├── BottomDock.tsx
+│   ├── GlassCard.tsx
+│   ├── GlowButton.tsx
+│   └── MoodChart.tsx
+│
+├── features/
+│   ├── memories/
+│   ├── mood/
+│   └── games/
+│
+├── constants/
+│   ├── colors.ts
+│   └── mockData.ts
+│
+├── assets/
+│
+└── package.json
+```
+
+The important idea is:
+
+> **Do not put the entire UI inside one `index.tsx` file.**
+
+---
+
+# Step 5: Build the design system first
+
+Before building screens, create your colors.
+
+Create:
+
+```text
+constants/colors.ts
+```
+
+Your design system should contain something like:
+
+```text
+Background
+
+#080C0E
+#0B0F12
+
+Glass
+
+rgba(255,255,255,0.05)
+
+Accent Colors
+
+Emerald
+#00FFB2
+
+Purple
+#A855F7
+
+Amber
+#F59E0B
+
+Cyan
+#00E5FF
+
+Text
+
+White
+#FFFFFF
+
+Secondary Text
+#94A3B8
+```
+
+Think of your app as having reusable building blocks:
+
+```text
+ROOTS UI SYSTEM
+│
+├── Background
+├── Typography
+├── Glass Cards
+├── Glow Effects
+├── Buttons
+├── Pills
+├── Icons
+└── Charts
+```
+
+This is important because you don't want to redesign every screen separately.
+
+---
+
+# Step 6: Build the reusable GlassCard
+
+Your first real component should be:
+
+```text
+components/GlassCard.tsx
+```
+
+Every major widget should use this component.
+
+For example:
+
+```text
+┌─────────────────────────────┐
+│                             │
+│     GLASS CARD COMPONENT    │
+│                             │
+│     Any content goes here   │
+│                             │
+└─────────────────────────────┘
+```
+
+Later you can reuse it for:
+
+```text
+Mood Card
+Memory Capsule
+Game Room
+NLP Telemetry
+Recommendation Cards
+```
+
+So instead of creating:
+
+```text
+MoodCard.tsx
+GameCard.tsx
+MemoryCard.tsx
+```
+
+with completely different styling, you build a common foundation:
+
+```text
+GlassCard
+```
+
+Then compose:
+
+```text
+GlassCard
+ ├── MoodContent
+ ├── GameContent
+ └── MemoryContent
+```
+
+---
+
+# Step 7: Build the Bottom Floating Dock
+
+Create:
+
+```text
+components/BottomDock.tsx
+```
+
+Your dock should have:
+
+```text
+🏠     🔍      ＋      👥      👤
+
+Home  Search  Add   Rooms   Profile
+```
+
+But visually:
+
+```text
+        ┌───────────────┐
+        │       +       │
+────────┴───────────────┴────────
+│ Home │ Search │ Rooms │ Profile │
+─────────────────────────────────
+```
+
+The center `+` button should be elevated.
+
+This is one of the most important visual elements because it gives the app its identity.
+
+For icons, use:
+
+```text
+@expo/vector-icons
+```
+
+or another compatible icon library.
+
+---
+
+# Step 8: Build the Top Navigation
+
+Create:
+
+```text
+components/TopNavigation.tsx
+```
+
+Structure:
+
+```text
+┌──────────────────────────────────────────┐
+
+🌳 ROOTS          Memories Capsules Games Mood       👤
+
+   MEMORY OS
+
+└──────────────────────────────────────────┘
+```
+
+The middle section is a segmented control:
+
+```text
+[ Memories ] [ Capsules ] [ Games ] [ Mood ]
+```
+
+When active:
+
+```text
+       ✨ GREEN GLOW
+
+    ┌─────────────┐
+    │   Mood      │
+    └─────────────┘
+```
+
+For now, use React state:
+
+```text
+activeTab
+```
+
+Example states:
+
+```text
+"memories"
+"capsules"
+"games"
+"mood"
+```
+
+---
+
+# Step 9: Build the Home Screen
+
+Now create:
+
+```text
+app/index.tsx
+```
+
+Don't build everything simultaneously.
+
+Build in this order.
+
+---
+
+## Component 1 — AI Memory Reel
+
+This is your hero section.
+
+```text
+┌──────────────────────────────┐
+│                              │
+│                              │
+│        CAMPFIRE IMAGE        │
+│                              │
+│             ▶                │
+│                              │
+│  Fragments of a beautiful    │
+│           week.              │
+│                              │
+│ WHISPER    BLIP       04:32  │
+└──────────────────────────────┘
+```
+
+For the first version:
+
+* Use a static image.
+* Use mock text.
+* Make the play button work visually.
+
+Don't implement video generation yet.
+
+---
+
+## Component 2 — Mood Summary
+
+Create:
+
+```text
+components/MoodSummary.tsx
+```
+
+Structure:
+
+```text
+┌─────────────────────────────┐
+
+Balanced              +12.4%
+
+        ╭───╮
+    ╭───╯   ╰───╮
+╭───╯           ╰──
+
+M   T   W   T   F   S   S
+
+
+😊   😌   😐   😔   ⚡
+
+└─────────────────────────────┘
+```
+
+At first, use fake data:
+
+```typescript
+const moodData = [
+  60,
+  70,
+  55,
+  78,
+  82,
+  75,
+  90
+];
+```
+
+Later:
+
+```text
+User interaction
+      ↓
+AI analysis
+      ↓
+Mood score
+      ↓
+Database
+      ↓
+Chart
+```
+
+---
+
+# Step 10: Build the Memory Capsule
+
+Create:
+
+```text
+components/MemoryCapsule.tsx
+```
+
+UI:
+
+```text
+┌─────────────────────────────┐
+
+Summer '26 Capsule
+
+247 memories • 7 people
+
+ 👤 👤 👤 👤 +4
+
+
+[ Invite to capsule → ]
+
+└─────────────────────────────┘
+```
+
+For now:
+
+```text
+247 memories
+7 people
+```
+
+are just mock values.
+
+---
+
+# Step 11: Build the Media Stream
+
+Create:
+
+```text
+components/MediaStream.tsx
+```
+
+Use:
+
+```text
+FlatList
+```
+
+or a grid layout.
+
+Your media objects can look like:
+
+```typescript
+const media = [
+  {
+    id: "1",
+    type: "image",
+    title: "Camping Trip",
+  },
+  {
+    id: "2",
+    type: "video",
+    duration: "18:42",
+  },
+  {
+    id: "3",
+    type: "audio",
+    title: "Dad",
+    duration: "00:48",
+  },
+  {
+    id: "4",
+    type: "note",
+    text: "Some memories are not captured..."
+  }
+];
+```
+
+This is an important concept:
+
+> **Build your UI using fake data first.**
+
+Don't connect databases too early.
+
+---
+
+# PHASE 2 — BUILD THE GAMES SCREEN
+
+Create:
+
+```text
+app/games.tsx
+```
+
+Build in this order.
+
+---
+
+## 1. Room Creation
+
+```text
+┌─────────────────────────────┐
+
+       GAME ROOM
+
+[ Create Game Room ]
+
+──────── OR ────────
+
+[ Enter Room Code ]
+
+[        JOIN        ]
+
+└─────────────────────────────┘
+```
+
+Initially, buttons can simply do:
+
+```text
+console.log("Create Room")
+```
+
+Your goal is UI and interaction first.
+
+---
+
+## 2. Charades Card
+
+```text
+┌─────────────────────────────┐
+
+       CHARADES
+
+       VIDEO PREVIEW
+
+         ▶
+
+👥 4 players
+
+[ HOST ROOM ]
+
+└─────────────────────────────┘
+```
+
+---
+
+## 3. Trivia Card
+
+```text
+┌─────────────────────────────┐
+
+🎵  2000s Pop Culture
+
+Hosted by 👤
+
+[ JOIN ROOM ]
+
+└─────────────────────────────┘
+```
+
+---
+
+## 4. Quick Launch
+
+```text
+┌──────────────┐ ┌──────────────┐
+│              │ │              │
+│ 🎨           │ │ ⚡           │
+│ Pictionary   │ │ Rapid Fire   │
+│              │ │              │
+└──────────────┘ └──────────────┘
+```
+
+---
+
+# PHASE 3 — BUILD THE MOOD SCREEN
+
+Create:
+
+```text
+app/mood.tsx
+```
+
+Build in this order.
+
+---
+
+## 1. Generative Mood Visualizer
+
+For version 1, don't build a real 3D particle simulation.
+
+Start with:
+
+```text
+         ✨
+      ✨ 🟢 ✨
+    🟢 🟢 🟢 🟢
+      ✨ 🟢 ✨
+         ✨
+
+
+Reflective & Content
+```
+
+You can create a glowing animated sphere using:
+
+```text
+React Native Reanimated
+```
+
+Later, you can add real 3D effects.
+
+---
+
+## 2. Daily Mood Selector
+
+```text
+┌─────┐
+│ 😰  │ Anxious
+└─────┘
+
+┌─────┐
+│ 😔  │ Low
+└─────┘
+
+┌─────┐
+│ 😐  │ Neutral
+└─────┘
+
+┌═══════════════┐
+│ 😊  Content   │ ← ACTIVE
+└═══════════════┘
+
+┌─────┐
+│ ⚡  │ Energized
+└─────┘
+```
+
+When clicked:
+
+```typescript
+setMood("content")
+```
+
+---
+
+## 3. NLP Telemetry
+
+Create cards:
+
+```text
+┌────────────────────┐
+│ DISTILBERT (NLP)   │
+│                    │
+│ Status: ● ONLINE   │
+│                    │
+│ Positive: 92%      │
+│ Low: 8%            │
+└────────────────────┘
+```
+
+Another:
+
+```text
+┌────────────────────┐
+│ ROBERTA (NLP)      │
+│                    │
+│ Reflection         │
+│ Peace              │
+└────────────────────┘
+```
+
+At this stage, this is **fake telemetry**.
+
+Later, your Python AI backend will provide real values.
+
+---
+
+# PHASE 4 — ADD STATE MANAGEMENT
+
+Once the UI works, install Zustand.
+
+You can create:
+
+```text
+store/
+│
+├── memoryStore.ts
+├── moodStore.ts
+└── gameStore.ts
+```
+
+For example:
+
+```text
+MoodStore
+
+currentMood
+weeklyMoodData
+emotionTags
+sentimentScore
+```
+
+Then:
+
+```text
+Mood Screen
+       ↓
+Mood Store
+       ↓
+All components update
+```
+
+---
+
+# PHASE 5 — ADD A REAL BACKEND
+
+Only after the UI is functional.
+
+For your first backend, I recommend:
+
+```text
+FastAPI
++
+Python
++
+SQLite
+```
+
+Architecture:
+
+```text
+React Native App
+        │
+        │ API Request
+        ▼
+FastAPI Backend
+        │
+        ├── Memory Service
+        ├── Mood Analysis
+        ├── NLP Models
+        └── Recommendation Engine
+        │
+        ▼
+SQLite Database
+```
+
+You already know Python, so this will fit well with your background.
+
+---
+
+# PHASE 6 — ADD AI
+
+Your AI pipeline could be:
+
+```text
+User Note
+
+"I had an amazing time camping
+with my friends."
+
+        ↓
+
+Sentiment Analysis
+
+        ↓
+
+Positive: 92%
+
+        ↓
+
+Emotion Detection
+
+Joy
+Connection
+Reflection
+
+        ↓
+
+Mood Score
+
+0.87
+
+        ↓
+
+ROOTS Dashboard
+```
+
+Possible architecture:
+
+```text
+Text Input
+    ↓
+Preprocessing
+    ↓
+DistilBERT
+    ↓
+Sentiment
+    ↓
+Emotion Classifier
+    ↓
+Mood Engine
+    ↓
+Recommendation Engine
+```
+
+For the first version, keep it simple:
+
+```text
+INPUT
+
+Text memory
+```
+
+Then:
+
+```text
+OUTPUT
+
+Sentiment score
+Emotion tags
+Mood score
+```
+
+Don't start with:
+
+```text
+Images
+Videos
+Audio
+Text
+Social behavior
+Real-time multiplayer
+3D visualizations
+```
+
+That would be too much for version 1.
+
+---
+
+# Recommended project roadmap
+
+## Week 1 — UI Foundation
+
+### Day 1
+
+```text
+Install tools
+Create Expo project
+Run app
+Set up NativeWind
+```
+
+### Day 2
+
+```text
+Create color system
+Create typography
+Create GlassCard
+Create GlowButton
+```
+
+### Day 3
+
+```text
+Build Bottom Dock
+Build Top Navigation
+Navigation between screens
+```
+
+### Day 4
+
+```text
+Build Memory Reel
+```
+
+### Day 5
+
+```text
+Build Mood Summary
+Build charts
+```
+
+### Day 6
+
+```text
+Build Memory Capsule
+Build Media Stream
+```
+
+### Day 7
+
+```text
+Refine Home Screen
+Animations
+Spacing
+Responsive testing
+```
+
+---
+
+# Week 2 — Other Screens
+
+### Day 8
+
+```text
+Games screen
+Room creation
+```
+
+### Day 9
+
+```text
+Charades
+Trivia
+Quick launch
+```
+
+### Day 10
+
+```text
+Mood screen
+Mood selector
+```
+
+### Day 11
+
+```text
+Mood visualizer
+```
+
+### Day 12
+
+```text
+NLP telemetry cards
+```
+
+### Day 13
+
+```text
+Recommendations
+```
+
+### Day 14
+
+```text
+Polish entire UI
+```
+
+---
+
+# Week 3 — Real Data
+
+```text
+Zustand
+Mock API
+Memory data
+Mood data
+Persistent storage
+```
+
+---
+
+# Week 4 — Python Backend
+
+```text
+FastAPI
+SQLite
+API endpoints
+Connect mobile app
+```
+
+---
+
+# Week 5 — AI
+
+Start with:
+
+```text
+Text
+ ↓
+Sentiment Analysis
+ ↓
+Emotion Classification
+ ↓
+Mood Score
+ ↓
+ROOTS UI
+```
+
+---
+
+# Your FIRST task
+
+Don't start building the whole application.
+
+Today, do only this:
+
+### 1. Create the project
+
+```bash
+npx create-expo-app@latest roots-memory-os
+```
+
+### 2. Run it
+
+```bash
+cd roots-memory-os
+npx expo start
+```
+
+### 3. Set up the project structure
+
+```text
+app/
+components/
+constants/
+features/
+store/
+```
+
+### 4. Build only these three components
+
+```text
+GlassCard
+GlowButton
+BottomDock
+```
+
+### 5. Create a simple dark screen
+
+```text
+ROOTS
+MEMORY OS
+
+Welcome back.
+
+[ Glass Card ]
+
+Home     Search      +      Rooms     Profile
+```
+
+Once that works, move to the **Top Navigation**, then the **AI Memory Reel**.
+
+The key principle for this project is:
+
+> **First make it look like ROOTS. Then make it interactive. Then make it intelligent.**
+
+That sequence will prevent you from getting overwhelmed and gives you a working, impressive app at every stage.
