@@ -6,6 +6,7 @@ from database import models
 
 from routers.memories import router as memories_router
 from routers.moods import router as moods_router
+from routers.games import router as games_router
 
 
 # ============================================================
@@ -55,6 +56,15 @@ app.include_router(
 
 app.include_router(
     moods_router
+)
+
+
+# ============================================================
+# MODULE 3 — CONNECTION GAMES
+# ============================================================
+
+app.include_router(
+    games_router
 )
 
 

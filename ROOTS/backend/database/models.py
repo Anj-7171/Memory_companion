@@ -1,7 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.database import Base
 
@@ -74,4 +82,91 @@ class Mood(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+
+
+# ============================================================
+# MODULE 3 — CONNECTION GAMES
+# ============================================================
+
+class Game(Base):
+    __tablename__ = "games"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    description: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    game_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+
+    sessions: Mapped[list["GameSession"]] = relationship(
+        back_populates="game",
+        cascade="all, delete-orphan",
+    )
+
+
+class GameSession(Base):
+    __tablename__ = "game_sessions"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True,
+    )
+
+    game_id: Mapped[int] = mapped_column(
+        ForeignKey("games.id"),
+        nullable=False,
+    )
+
+    player_name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    score: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    moves: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    completed: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    game: Mapped["Game"] = relationship(
+        back_populates="sessions",
     )
