@@ -2,6 +2,7 @@ import {
   View,
   Text,
   StyleSheet,
+  Pressable,
 } from "react-native";
 
 import GlassCard from "./GlassCard";
@@ -15,6 +16,7 @@ interface MemoryCardProps {
   mood: string;
   type: string;
   icon: string;
+  onDelete?: () => void;
 }
 
 export default function MemoryCard({
@@ -25,6 +27,7 @@ export default function MemoryCard({
   mood,
   type,
   icon,
+  onDelete,
 }: MemoryCardProps) {
   return (
     <GlassCard style={styles.card}>
@@ -40,6 +43,12 @@ export default function MemoryCard({
             {date} · {time}
           </Text>
         </View>
+
+        {onDelete && (
+          <Pressable onPress={onDelete} style={styles.deleteButton} hitSlop={8}>
+            <Text style={styles.deleteText}>✕</Text>
+          </Pressable>
+        )}
       </View>
 
       <Text style={styles.title}>
@@ -153,5 +162,21 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     fontSize: 8,
     letterSpacing: 1.5,
+  },
+
+  deleteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255, 107, 107, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 10,
+  },
+
+  deleteText: {
+    color: COLORS.danger,
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

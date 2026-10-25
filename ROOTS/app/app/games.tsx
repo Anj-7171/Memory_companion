@@ -3,6 +3,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Pressable,
   Alert,
 } from "react-native";
 
@@ -17,22 +18,26 @@ import GlassCard from "../components/GlassCard";
 import GameCard from "../components/GameCard";
 
 export default function GamesScreen() {
-    const handleGamePress = (title: string) => {
+  const handleGamePress = (title: string) => {
     if (title === "Memory Match") {
-        router.push("../memory-match");
-        return;
+      router.push("/memory-match");
+      return;
+    }
+    if (title === "Timeline Challenge") {
+      router.push("/timeline-challenge");
+      return;
+    }
+    if (title === "Mood Recall") {
+      router.push("/mood");
+      return;
     }
 
     Alert.alert(
-        title,
-        `${title} will be available to play soon.`,
-        [
-        {
-            text: "Got it",
-        },
-        ]
+      title,
+      `${title} will be available in the next expansion.`,
+      [{ text: "Got it" }]
     );
-    };
+  };
 
   return (
     <View style={styles.container}>
@@ -72,38 +77,39 @@ export default function GamesScreen() {
         </View>
 
         {/* Daily Challenge */}
-        <GlassCard style={styles.challengeCard}>
-          <View style={styles.challengeHeader}>
-            <View>
-              <Text style={styles.challengeLabel}>
-                DAILY CHALLENGE
-              </Text>
+        <Pressable onPress={() => router.push("/timeline-challenge")}>
+          <GlassCard style={styles.challengeCard}>
+            <View style={styles.challengeHeader}>
+              <View>
+                <Text style={styles.challengeLabel}>
+                  DAILY CHALLENGE
+                </Text>
 
-              <Text style={styles.challengeTitle}>
-                Recall 3 memories
+                <Text style={styles.challengeTitle}>
+                  Recall 3 memories
+                </Text>
+              </View>
+
+              <Text style={styles.challengeIcon}>
+                ✦
               </Text>
             </View>
 
-            <Text style={styles.challengeIcon}>
-              ✦
+            <Text style={styles.challengeDescription}>
+              {"Complete today's memory challenge to continue your streak."}
             </Text>
-          </View>
 
-          <Text style={styles.challengeDescription}>
-            Complete today's memory challenge to
-            continue your streak.
-          </Text>
+            <View style={styles.challengeProgress}>
+              <View style={styles.challengeProgressBackground}>
+                <View style={styles.challengeProgressBar} />
+              </View>
 
-          <View style={styles.challengeProgress}>
-            <View style={styles.challengeProgressBackground}>
-              <View style={styles.challengeProgressBar} />
+              <Text style={styles.challengeCount}>
+                2 / 3
+              </Text>
             </View>
-
-            <Text style={styles.challengeCount}>
-              2 / 3
-            </Text>
-          </View>
-        </GlassCard>
+          </GlassCard>
+        </Pressable>
 
         {/* Games Header */}
         <View style={styles.sectionHeader}>

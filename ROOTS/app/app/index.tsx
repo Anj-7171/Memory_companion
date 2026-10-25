@@ -1,18 +1,77 @@
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   Pressable,
+  RefreshControl,
 } from "react-native";
+import { router } from "expo-router";
 
 import { COLORS } from "../constants/colors";
 import RootLogo from "../components/RootLogo";
 import GlassCard from "../components/GlassCard";
 import BottomDock from "../components/BottomDock";
 import MoodSummary from "../components/MoodSummary";
+import CreateMemoryModal from "../components/CreateMemoryModal";
+import {
+  getMemories,
+  getMoodSummary,
+  getMemoryReel,
+  MoodSummary as MoodSummaryType,
+  MemoryReelResponse,
+} from "../services/api";
 
 export default function HomeScreen() {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [memoryCount, setMemoryCount] = useState<number>(0);
+  const [moodSummary, setMoodSummary] = useState<MoodSummaryType | null>(null);
+  const [memoryReel, setMemoryReel] = useState<MemoryReelResponse | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async () => {
+    try {
+      const [memoriesData, moodData, reelData] = await Promise.all([
+        getMemories().catch(() => []),
+        getMoodSummary().catch(() => null),
+        getMemoryReel().catch(() => null),
+      ]);
+
+      setMemoryCount(memoriesData.length);
+      setMoodSummary(moodData);
+      setMemoryReel(reelData);
+    } catch {
+      // Backend may be offline; silently fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    Promise.all([
+      getMemories().catch(() => []),
+      getMoodSummary().catch(() => null),
+      getMemoryReel().catch(() => null),
+    ]).then(([memoriesData, moodData, reelData]) => {
+      if (isMounted) {
+        setMemoryCount(memoriesData.length);
+        setMoodSummary(moodData);
+        setMemoryReel(reelData);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
   return (
     <View style={styles.container}>
       {/* Ambient glow */}
@@ -23,6 +82,13 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+          />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -53,6 +119,33 @@ export default function HomeScreen() {
           </Text>
         </View>
 
+        {/* AI Memory Reel */}
+        {memoryReel && (
+          <GlassCard style={styles.reelCard}>
+            <View style={styles.reelHeader}>
+              <View style={styles.reelBadge}>
+                <Text style={styles.reelBadgeText}>✦ AI MEMORY REEL</Text>
+              </View>
+              <Text style={styles.reelTone}>{memoryReel.emotional_tone}</Text>
+            </View>
+
+            <Text style={styles.reelTitle}>{memoryReel.title}</Text>
+            <Text style={styles.reelNarration}>{memoryReel.narration}</Text>
+
+            {memoryReel.key_moments && memoryReel.key_moments.length > 0 && (
+              <View style={styles.reelHighlights}>
+                {memoryReel.key_moments.map((km) => (
+                  <View key={km.id} style={styles.reelChip}>
+                    <Text style={styles.reelChipText}>
+                      • {km.title} {km.mood ? `(${km.mood})` : ""}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </GlassCard>
+        )}
+
         {/* Memory Pulse */}
         <GlassCard style={styles.pulseCard}>
           <View style={styles.pulseHeader}>
@@ -72,7 +165,7 @@ export default function HomeScreen() {
           <View style={styles.pulseContent}>
             <View>
               <Text style={styles.bigNumber}>
-                12
+                {memoryCount}
               </Text>
 
               <Text style={styles.numberLabel}>
@@ -91,7 +184,10 @@ export default function HomeScreen() {
         </GlassCard>
 
         {/* Capture Button */}
-        <Pressable style={styles.captureButton}>
+        <Pressable
+          style={styles.captureButton}
+          onPress={() => setIsModalVisible(true)}
+        >
           <View style={styles.captureIcon}>
             <Text style={styles.plus}>+</Text>
           </View>
@@ -117,20 +213,25 @@ export default function HomeScreen() {
             Emotional landscape
           </Text>
 
-          <Text style={styles.sectionAction}>
-            VIEW ALL
-          </Text>
+          <Pressable onPress={() => router.push("/memories" as any)}>
+            <Text style={styles.sectionAction}>
+              VIEW ALL
+            </Text>
+          </Pressable>
         </View>
 
         <GlassCard style={styles.moodCard}>
           <View style={styles.moodTop}>
             <View>
               <Text style={styles.moodLabel}>
-                TODAY'S STATE
+                {"TODAY'S STATE"}
               </Text>
 
               <Text style={styles.moodTitle}>
-                Reflective
+                {moodSummary?.current_mood
+                  ? moodSummary.current_mood.charAt(0).toUpperCase() +
+                    moodSummary.current_mood.slice(1)
+                  : "Reflective"}
               </Text>
             </View>
 
@@ -140,18 +241,39 @@ export default function HomeScreen() {
           </View>
 
           <Text style={styles.moodDescription}>
-            Your thoughts today feel calm, observant,
-            and introspective.
+            {moodSummary?.current_mood
+              ? `Your latest recorded emotional state is ${moodSummary.current_mood}.`
+              : "Your thoughts today feel calm, observant, and introspective."}
           </Text>
 
           <View style={styles.moodBar}>
-            <View style={styles.moodProgress} />
+            <View
+              style={[
+                styles.moodProgress,
+                {
+                  width: `${
+                    moodSummary?.average_score
+                      ? Math.min(moodSummary.average_score * 10, 100)
+                      : 68
+                  }%`,
+                },
+              ]}
+            />
           </View>
         </GlassCard>
 
         {/* Weekly Mood Summary */}
         <MoodSummary />
       </ScrollView>
+
+      {/* Create Memory Modal */}
+      <CreateMemoryModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        onMemoryCreated={() => {
+          loadData();
+        }}
+      />
 
       {/* Bottom Navigation Dock */}
       <BottomDock />
@@ -245,6 +367,74 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     marginTop: 16,
     maxWidth: 300,
+  },
+
+  reelCard: {
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(124, 255, 178, 0.25)",
+    backgroundColor: "rgba(124, 255, 178, 0.03)",
+  },
+
+  reelHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  reelBadge: {
+    backgroundColor: "rgba(124, 255, 178, 0.12)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+
+  reelBadgeText: {
+    color: COLORS.primary,
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+  },
+
+  reelTone: {
+    color: COLORS.muted,
+    fontSize: 11,
+    fontStyle: "italic",
+  },
+
+  reelTitle: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+
+  reelNarration: {
+    color: COLORS.muted,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+
+  reelHighlights: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 12,
+  },
+
+  reelChip: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
+  },
+
+  reelChipText: {
+    color: COLORS.text,
+    fontSize: 11,
   },
 
   pulseCard: {

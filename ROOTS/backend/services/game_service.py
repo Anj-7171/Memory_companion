@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -53,7 +53,7 @@ def create_game_session(
         score=0,
         moves=0,
         completed=False,
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(timezone.utc),
     )
 
     db.add(session)
@@ -97,7 +97,7 @@ def complete_game_session(
     session.score = score
     session.moves = moves
     session.completed = True
-    session.completed_at = datetime.utcnow()
+    session.completed_at = datetime.now(timezone.utc)
 
     db.commit()
     db.refresh(session)

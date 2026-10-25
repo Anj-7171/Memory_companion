@@ -9,7 +9,20 @@ const days = ["M", "T", "W", "T", "F", "S", "S"];
 
 const moods = ["😊", "😌", "😐", "😌", "😊", "😌", "⚡"];
 
-export default function MoodSummary() {
+interface MoodSummaryProps {
+  averageScore?: number;
+  currentMood?: string | null;
+}
+
+export default function MoodSummary({ averageScore, currentMood }: MoodSummaryProps = {}) {
+  const displayTitle = currentMood
+    ? currentMood.charAt(0).toUpperCase() + currentMood.slice(1)
+    : "Balanced";
+
+  const displayScore = averageScore
+    ? `${(averageScore * 10).toFixed(0)}%`
+    : "+12.4%";
+
   return (
     <GlassCard style={styles.card}>
       <View style={styles.header}>
@@ -19,17 +32,17 @@ export default function MoodSummary() {
           </Text>
 
           <Text style={styles.title}>
-            Balanced
+            {displayTitle}
           </Text>
         </View>
 
         <View style={styles.changeContainer}>
           <Text style={styles.change}>
-            +12.4%
+            {displayScore}
           </Text>
 
           <Text style={styles.changeLabel}>
-            THIS WEEK
+            AVERAGE
           </Text>
         </View>
       </View>

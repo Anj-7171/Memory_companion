@@ -3,17 +3,84 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from "react-native";
+import { useState, useEffect, useCallback } from "react";
 
 import { COLORS } from "../constants/colors";
 import { weeklyMoodData } from "../constants/mockData";
+import { createMood, getMoodSummary, MoodSummary } from "../services/api";
 
 import RootLogo from "../components/RootLogo";
 import BottomDock from "../components/BottomDock";
 import GlassCard from "../components/GlassCard";
 import MoodChart from "../components/MoodChart";
 
+const MOOD_CHOICES = [
+  { name: "Anxious", key: "anxious", icon: "😰", score: 2, desc: "Restless, overwhelmed, or uneasy." },
+  { name: "Low", key: "low", icon: "😔", score: 4, desc: "Tired, quiet, or feeling down." },
+  { name: "Neutral", key: "neutral", icon: "😐", score: 6, desc: "Steady, balanced, and observant." },
+  { name: "Content", key: "content", icon: "😊", score: 8, desc: "Calm, satisfied, and at peace." },
+  { name: "Energized", key: "energized", icon: "⚡", score: 10, desc: "Motivated, excited, and inspired." },
+];
+
 export default function MoodScreen() {
+  const [summary, setSummary] = useState<MoodSummary | null>(null);
+  const [loggingMood, setLoggingMood] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchSummary = useCallback(async () => {
+    try {
+      const data = await getMoodSummary();
+      setSummary(data);
+    } catch {
+      // Backend offline; fallback silently
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getMoodSummary()
+      .then((data) => {
+        if (isMounted) setSummary(data);
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchSummary();
+    setRefreshing(false);
+  };
+
+  const handleSelectMood = async (moodKey: string) => {
+    setLoggingMood(moodKey);
+    try {
+      await createMood({ mood: moodKey });
+      await fetchSummary();
+    } catch (error: any) {
+      Alert.alert("Error", error?.message || "Could not log mood.");
+    } finally {
+      setLoggingMood(null);
+    }
+  };
+
+  const currentChoice = MOOD_CHOICES.find(
+    (m) => m.key === (summary?.current_mood || "content")
+  ) || MOOD_CHOICES[3];
+
+  const balancePercentage = summary?.average_score
+    ? Math.round(summary.average_score * 10)
+    : 78;
+
   return (
     <View style={styles.container}>
       {/* Background glow */}
@@ -23,6 +90,13 @@ export default function MoodScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+          />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -46,7 +120,6 @@ export default function MoodScreen() {
           <Text style={styles.title}>
             Understand
             {"\n"}
-
             <Text style={styles.highlight}>
               yourself.
             </Text>
@@ -58,6 +131,48 @@ export default function MoodScreen() {
           </Text>
         </View>
 
+        {/* Mood Check-In Selector */}
+        <GlassCard style={styles.selectorCard}>
+          <Text style={styles.selectorLabel}>CHECK IN YOUR MOOD</Text>
+          <Text style={styles.selectorSub}>How are you feeling right now?</Text>
+
+          <View style={styles.selectorRow}>
+            {MOOD_CHOICES.map((choice) => {
+              const isSelected = (summary?.current_mood || "").toLowerCase() === choice.key;
+              const isBusy = loggingMood === choice.key;
+
+              return (
+                <Pressable
+                  key={choice.key}
+                  style={[
+                    styles.moodOption,
+                    isSelected && styles.activeMoodOption,
+                  ]}
+                  onPress={() => handleSelectMood(choice.key)}
+                  disabled={loggingMood !== null}
+                >
+                  <Text style={styles.moodEmoji}>{choice.icon}</Text>
+                  <Text
+                    style={[
+                      styles.moodOptionText,
+                      isSelected && styles.activeMoodOptionText,
+                    ]}
+                  >
+                    {choice.name}
+                  </Text>
+                  {isBusy && (
+                    <ActivityIndicator
+                      size="small"
+                      color={COLORS.primary}
+                      style={{ marginTop: 4 }}
+                    />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
+
         {/* Current Mood */}
         <GlassCard style={styles.currentMoodCard}>
           <View style={styles.cardHeader}>
@@ -66,25 +181,25 @@ export default function MoodScreen() {
             </Text>
 
             <Text style={styles.statusText}>
-              TODAY
+              {summary?.total_entries ? `${summary.total_entries} ENTRIES` : "TODAY"}
             </Text>
           </View>
 
           <View style={styles.moodContent}>
             <View>
               <Text style={styles.moodName}>
-                Reflective
+                {currentChoice.name}
               </Text>
 
               <Text style={styles.moodDescription}>
-                Calm, observant, and introspective.
+                {currentChoice.desc}
               </Text>
             </View>
 
             <View style={styles.moodOrb}>
               <View style={styles.moodOrbInner}>
                 <Text style={styles.orbIcon}>
-                  ◌
+                  {currentChoice.icon}
                 </Text>
               </View>
             </View>
@@ -96,12 +211,17 @@ export default function MoodScreen() {
             </Text>
 
             <Text style={styles.score}>
-              78
+              {balancePercentage}
             </Text>
           </View>
 
           <View style={styles.progressBackground}>
-            <View style={styles.progress} />
+            <View
+              style={[
+                styles.progress,
+                { width: `${balancePercentage}%` },
+              ]}
+            />
           </View>
         </GlassCard>
 
@@ -425,5 +545,61 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: "700",
     letterSpacing: 1.3,
+  },
+
+  selectorCard: {
+    marginBottom: 24,
+  },
+
+  selectorLabel: {
+    color: COLORS.primary,
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+
+  selectorSub: {
+    color: COLORS.muted,
+    fontSize: 12,
+    marginBottom: 16,
+  },
+
+  selectorRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  moodOption: {
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
+    flex: 1,
+    marginHorizontal: 3,
+  },
+
+  activeMoodOption: {
+    backgroundColor: "rgba(124, 255, 178, 0.12)",
+    borderColor: COLORS.primary,
+  },
+
+  moodEmoji: {
+    fontSize: 22,
+    marginBottom: 6,
+  },
+
+  moodOptionText: {
+    color: COLORS.muted,
+    fontSize: 9,
+    fontWeight: "600",
+  },
+
+  activeMoodOptionText: {
+    color: COLORS.primary,
+    fontWeight: "700",
   },
 });

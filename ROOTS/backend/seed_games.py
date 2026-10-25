@@ -5,28 +5,38 @@ from database.models import Game
 def seed_games():
     db = SessionLocal()
 
+    games_to_seed = [
+        {
+            "name": "Memory Match",
+            "description": "Match pairs of cards to sharpen recall and focus.",
+            "game_type": "memory_match",
+        },
+        {
+            "name": "Timeline Challenge",
+            "description": "Reconstruct milestone memories in chronological sequence.",
+            "game_type": "timeline_challenge",
+        },
+    ]
+
     try:
-        existing_game = (
-            db.query(Game)
-            .filter(Game.game_type == "memory_match")
-            .first()
-        )
+        for g in games_to_seed:
+            existing = (
+                db.query(Game)
+                .filter(Game.game_type == g["game_type"])
+                .first()
+            )
+            if not existing:
+                game = Game(
+                    name=g["name"],
+                    description=g["description"],
+                    game_type=g["game_type"],
+                )
+                db.add(game)
+                print(f"Added game: {g['name']}")
+            else:
+                print(f"Game already exists: {g['name']}")
 
-        if existing_game:
-            print("Memory Match already exists.")
-            return
-
-        game = Game(
-            name="Memory Match",
-            description="Match the pairs and test your memory.",
-            game_type="memory_match",
-        )
-
-        db.add(game)
         db.commit()
-
-        print("Memory Match game added successfully.")
-
     finally:
         db.close()
 
