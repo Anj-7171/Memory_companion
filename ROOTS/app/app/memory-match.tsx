@@ -5,10 +5,11 @@ import {
   Pressable,
   Alert,
 } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { router } from "expo-router";
 
 import { COLORS } from "../constants/colors";
+import { createGameSession, completeGameSession } from "../services/api";
 
 const symbols = ["✦", "◈", "◌", "◎"];
 
@@ -30,6 +31,13 @@ export default function MemoryMatchScreen() {
   const [flippedCards, setFlippedCards] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
   const [isChecking, setIsChecking] = useState(false);
+  const [sessionId, setSessionId] = useState<number | null>(null);
+
+  useEffect(() => {
+    createGameSession(1, "Player")
+      .then((session) => setSessionId(session.id))
+      .catch(() => {});
+  }, []);
 
   const matchedPairs = cards.filter(
     (card) => card.isMatched
@@ -97,10 +105,17 @@ export default function MemoryMatchScreen() {
             );
 
           if (completed) {
+            const finalMoves = moves + 1;
+            const finalScore = Math.max(100 - (finalMoves * 5), 10);
+
+            if (sessionId) {
+              completeGameSession(sessionId, finalScore, finalMoves).catch(() => {});
+            }
+
             setTimeout(() => {
               Alert.alert(
                 "Memory Complete ✦",
-                `You completed the challenge in ${moves + 1} moves.`,
+                `You completed the challenge in ${finalMoves} moves!\nScore: ${finalScore} pts`,
                 [
                   {
                     text: "Play Again",
@@ -140,6 +155,10 @@ export default function MemoryMatchScreen() {
     setFlippedCards([]);
     setMoves(0);
     setIsChecking(false);
+
+    createGameSession(1, "Player")
+      .then((session) => setSessionId(session.id))
+      .catch(() => {});
   };
 
   return (

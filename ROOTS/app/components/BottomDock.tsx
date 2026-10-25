@@ -15,6 +15,11 @@ const navItems = [
     route: "/memories",
   },
   {
+    label: "Capsules",
+    icon: "◎",
+    route: "/capsules",
+  },
+  {
     label: "Mood",
     icon: "◌",
     route: "/mood",

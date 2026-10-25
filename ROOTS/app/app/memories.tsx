@@ -4,28 +4,117 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
+  RefreshControl,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { COLORS } from "../constants/colors";
-import { memories } from "../constants/mockData";
+import { getMemories, deleteMemory, Memory } from "../services/api";
 
 import RootLogo from "../components/RootLogo";
 import BottomDock from "../components/BottomDock";
 import MemoryCard from "../components/MemoryCard";
 
+const getMoodIcon = (mood: string | null) => {
+  const normalized = (mood || "").toLowerCase();
+  if (normalized.includes("peace")) return "◌";
+  if (normalized.includes("reflect")) return "✦";
+  if (normalized.includes("proud") || normalized.includes("win")) return "↑";
+  if (normalized.includes("inspir")) return "✧";
+  if (normalized.includes("nostalg")) return "◎";
+  if (normalized.includes("energ") || normalized.includes("happy")) return "⚡";
+  return "◈";
+};
+
+const formatMemoryDateTime = (isoString: string) => {
+  try {
+    const d = new Date(isoString);
+    const date = d.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+    const time = d.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return { date, time };
+  } catch {
+    return { date: "Recent", time: "" };
+  }
+};
+
 export default function MemoriesScreen() {
+  const [memoriesList, setMemoriesList] = useState<Memory[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const filteredMemories = memories.filter((memory) => {
-    const query = searchQuery.toLowerCase();
+  const fetchMemories = useCallback(async () => {
+    try {
+      const data = await getMemories();
+      setMemoriesList(data);
+    } catch {
+      // Fallback silently if server offline
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    return (
-      memory.title.toLowerCase().includes(query) ||
-      memory.description.toLowerCase().includes(query) ||
-      memory.mood.toLowerCase().includes(query) ||
-      memory.type.toLowerCase().includes(query)
+  useEffect(() => {
+    let isMounted = true;
+
+    getMemories()
+      .then((data) => {
+        if (isMounted) setMemoriesList(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchMemories();
+    setRefreshing(false);
+  };
+
+  const handleDelete = (id: number, title: string) => {
+    Alert.alert(
+      "Delete Memory",
+      `Are you sure you want to delete "${title}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteMemory(id);
+              setMemoriesList((prev) => prev.filter((m) => m.id !== id));
+            } catch (error: any) {
+              Alert.alert("Error", error?.message || "Failed to delete memory.");
+            }
+          },
+        },
+      ]
     );
+  };
+
+  const filteredMemories = memoriesList.filter((memory) => {
+    const query = searchQuery.toLowerCase();
+    const titleMatch = memory.title.toLowerCase().includes(query);
+    const contentMatch = memory.content.toLowerCase().includes(query);
+    const moodMatch = (memory.mood || "").toLowerCase().includes(query);
+    const typeMatch = (memory.memory_type || "").toLowerCase().includes(query);
+
+    return titleMatch || contentMatch || moodMatch || typeMatch;
   });
 
   return (
@@ -35,6 +124,13 @@ export default function MemoriesScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+          />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -42,7 +138,7 @@ export default function MemoriesScreen() {
 
           <View style={styles.memoryCount}>
             <Text style={styles.countNumber}>
-              {memories.length}
+              {memoriesList.length}
             </Text>
 
             <Text style={styles.countLabel}>
@@ -60,7 +156,6 @@ export default function MemoriesScreen() {
           <Text style={styles.title}>
             Your life,
             {"\n"}
-
             <Text style={styles.highlight}>
               remembered.
             </Text>
@@ -99,19 +194,29 @@ export default function MemoriesScreen() {
         </View>
 
         {/* Memory Cards */}
-        {filteredMemories.length > 0 ? (
-          filteredMemories.map((memory) => (
-            <MemoryCard
-              key={memory.id}
-              title={memory.title}
-              description={memory.description}
-              date={memory.date}
-              time={memory.time}
-              mood={memory.mood}
-              type={memory.type}
-              icon={memory.icon}
-            />
-          ))
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color={COLORS.primary}
+            style={{ marginTop: 40 }}
+          />
+        ) : filteredMemories.length > 0 ? (
+          filteredMemories.map((memory) => {
+            const { date, time } = formatMemoryDateTime(memory.created_at);
+            return (
+              <MemoryCard
+                key={memory.id}
+                title={memory.title}
+                description={memory.content}
+                date={date}
+                time={time}
+                mood={memory.mood || "Moment"}
+                type={memory.memory_type.toUpperCase()}
+                icon={getMoodIcon(memory.mood)}
+                onDelete={() => handleDelete(memory.id, memory.title)}
+              />
+            );
+          })
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>⌕</Text>
@@ -121,8 +226,9 @@ export default function MemoriesScreen() {
             </Text>
 
             <Text style={styles.emptyDescription}>
-              Try searching for a different thought,
-              mood, or memory.
+              {searchQuery
+                ? "Try searching for a different thought, mood, or memory."
+                : "Tap '+' on Home to capture your very first memory."}
             </Text>
           </View>
         )}

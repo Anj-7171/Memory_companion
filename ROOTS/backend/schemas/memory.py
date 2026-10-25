@@ -24,6 +24,10 @@ class MemoryCreate(BaseModel):
         max_length=50,
     )
 
+    capsule_id: int | None = Field(
+        default=None,
+    )
+
 
 class MemoryResponse(MemoryCreate):
     model_config = ConfigDict(

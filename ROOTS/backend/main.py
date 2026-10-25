@@ -7,6 +7,8 @@ from database import models
 from routers.memories import router as memories_router
 from routers.moods import router as moods_router
 from routers.games import router as games_router
+from routers.capsules import router as capsules_router
+from routers.ai import router as ai_router
 
 
 # ============================================================
@@ -16,6 +18,12 @@ from routers.games import router as games_router
 Base.metadata.create_all(
     bind=engine
 )
+
+try:
+    from seed_games import seed_games
+    seed_games()
+except Exception:
+    pass
 
 
 # ============================================================
@@ -65,6 +73,24 @@ app.include_router(
 
 app.include_router(
     games_router
+)
+
+
+# ============================================================
+# MODULE 4 — MEMORY CAPSULES
+# ============================================================
+
+app.include_router(
+    capsules_router
+)
+
+
+# ============================================================
+# MODULE 5 — AI & INTELLIGENCE ENGINE
+# ============================================================
+
+app.include_router(
+    ai_router
 )
 
 
